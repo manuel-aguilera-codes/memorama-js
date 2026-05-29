@@ -7,6 +7,11 @@ class Game {
   idElement;
   boxes;
   container;
+  divs;
+  bloqueado;
+  tarjeta1;
+  tarjeta2;
+  paresAbiertos;
 
   constructor(rows, cols, idElement = "game") {
     this.rows = rows;
@@ -16,6 +21,13 @@ class Game {
     this.boxes = [];
     this.createBoxes();
     this.paintBoxes();
+    this.divs = document.querySelectorAll("#game .box");
+    this.bloqueado = false;
+    this.tarjeta1 = null;
+    this.tarjeta2 = null;
+    this.paresAbiertos = 0;
+    this.inicio = null;
+    this.setEventListeners();
   }
 
   createRandomColors() {
@@ -52,9 +64,11 @@ class Game {
 
   paintBoxes() {
     this.setGridTemplate();
+    let index = 0;
     this.boxes.map((box) => {
       let newBoxDiv = document.createElement("div");
       newBoxDiv.classList.add("box");
+      newBoxDiv.dataset.color = box.color;
       this.container.append(newBoxDiv);
     });
   }
@@ -81,6 +95,55 @@ class Game {
       rows: rows,
       cols: cols,
     };
+  }
+
+  comprobarIgualdad = (event) => {
+    if (this.bloqueado === true) return;
+
+    let tarjetaClickeada = event.target;
+    tarjetaClickeada.style.backgroundColor = tarjetaClickeada.dataset.color;
+
+    if (this.tarjeta1 === null) {
+      if (this.inicio === null) {
+        this.inicio = Date.now();
+      }
+      this.tarjeta1 = tarjetaClickeada;
+    } else {
+      this.tarjeta2 = tarjetaClickeada;
+      this.bloqueado = true;
+
+      if (this.tarjeta1.dataset.color === this.tarjeta2.dataset.color) {
+        this.tarjeta1 = null;
+        this.tarjeta2 = null;
+        this.bloqueado = false;
+        this.paresAbiertos = this.paresAbiertos + 1;
+      } else {
+        setTimeout(() => {
+          this.tarjeta1.style.backgroundColor = "black";
+          this.tarjeta2.style.backgroundColor = "black";
+          this.tarjeta1 = null;
+          this.tarjeta2 = null;
+          this.bloqueado = false;
+        }, 500);
+      }
+
+      if (this.paresAbiertos === (this.rows * this.cols) / 2) {
+        for (let div of this.divs) {
+          div.removeEventListener("click", this.comprobarIgualdad);
+        }
+        let avisoVictoria = document.createElement("h3");
+        this.container.after(avisoVictoria);
+        let fin = Date.now();
+        let tiempoSegundos = Math.floor((fin - this.inicio) / 1000);
+        avisoVictoria.textContent = `HAS TERMINADO! Tiempo: ${tiempoSegundos} segundos`;
+      }
+    }
+  };
+
+  setEventListeners() {
+    for (let div of this.divs) {
+      div.addEventListener("click", this.comprobarIgualdad);
+    }
   }
 }
 
